@@ -50,6 +50,12 @@ jobs:
       run:
         shell: bash {0}
     steps:
+      - name: Extract Configuration Information and Store in Step Outputs
+        id: store_config
+        run: |
+          version=`sed -E -n -e 's/version= //p' $CONFIG_ARTIFACT_PATH`
+          echo "version=$version" >> $GITHUB_OUTPUT
+
       - name: Install dependencies
         run: |
           sudo apt-get -y update
@@ -62,7 +68,7 @@ jobs:
         id: create_linux_sdl2_x86_64_archive
         run: |
           make -j$(nproc) sdl2 SKIPDEPEND=1 RELEASEBUILD=1
-          archive_file="Linux.SDL2.x86_64.zip"
+          archive_file="Linux.SDL2.x86_64.${{ steps.store_config.outputs.version }}.zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
           zip --junk-paths "${archive_file}" fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
@@ -92,6 +98,12 @@ jobs:
       run:
         shell: bash {0}
     steps:
+      - name: Extract Configuration Information and Store in Step Outputs
+        id: store_config
+        run: |
+          version=`sed -E -n -e 's/version= //p' $CONFIG_ARTIFACT_PATH`
+          echo "version=$version" >> $GITHUB_OUTPUT
+
       - name: Install dependencies
         run: |
           sudo apt-get -y update
@@ -104,7 +116,7 @@ jobs:
         id: create_linux_sdl1_x86_64_archive
         run: |
           make -j$(nproc) sdl SKIPDEPEND=1 RELEASEBUILD=1
-          archive_file="Linux.SDL1.x86_64.zip"
+          archive_file="Linux.SDL1.x86_64.${{ steps.store_config.outputs.version }}.zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
           zip --junk-paths "${archive_file}" fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
@@ -177,12 +189,11 @@ jobs:
       - name: Populate Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Nightly build (${{ steps.store_config.outputs.version }})
+          name: nightly build (${{ steps.store_config.outputs.version }})
           tag_name: latest
           target_commitish: ${{ github.sha }}
           draft: false
-          prerelease: false
-          make_latest: true
+          prerelease: true
           files: |
             ${{ steps.store_linux_sdl2_x86_64.outputs.archive_path }}
             ${{ steps.store_linux_sdl1_x86_64.outputs.archive_path }}
