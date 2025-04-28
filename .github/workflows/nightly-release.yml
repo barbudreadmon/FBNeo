@@ -75,7 +75,7 @@ jobs:
         id: create_linux_sdl2_x86_64_archive
         run: |
           make -j$(nproc) sdl2 SKIPDEPEND=1 RELEASEBUILD=1
-          archive_file="FinalBurn Neo (Linux)(SDL2)(x86_64).zip"
+          archive_file="Linux_SDL2_x86_64.zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
           zip --junk-paths "${archive_file}" fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
@@ -130,13 +130,13 @@ jobs:
         id: create_linux_sdl1_x86_64_archive
         run: |
           make -j$(nproc) sdl SKIPDEPEND=1 RELEASEBUILD=1
-          archive_file="FinalBurn Neo (Linux)(SDL1)(x86_64).zip"
+          archive_file="Linux_SDL1_x86_64.zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
           zip --junk-paths "${archive_file}" fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
       - name: Create Archive Path
         run: |
-          echo archive_path= '${{ steps.create_linux_sdl12_x86_64_archive.outputs.archive_file }}' > $SDL1_ARTIFACT_PATH
+          echo archive_path= '${{ steps.create_linux_sdl1_x86_64_archive.outputs.archive_file }}' > $SDL1_ARTIFACT_PATH
 
       - name: Upload Archive Path
         uses: actions/upload-artifact@v4
@@ -203,11 +203,11 @@ jobs:
       - name: Populate Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.store_config.outputs.version }}
-          name: ${{ steps.store_config.outputs.version }}
+          tag_name: nightly-${{ steps.store_config.outputs.version }}
+          name: nightly-${{ steps.store_config.outputs.version }}
           target_commitish: ${{ github.sha }}
           draft: false
-          prerelease: true
+          prerelease: false
           make_latest: true
           files: |
             ${{ steps.store_linux_sdl2_x86_64.outputs.archive_path }}
