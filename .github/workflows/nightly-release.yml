@@ -336,7 +336,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: macOS_arm64
+          name: macOS__arm64
           path: "projectfiles/xcode/build/Release/FinalBurn Neo.app"
 
       - name: Compress macOS app
