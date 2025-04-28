@@ -44,23 +44,12 @@ jobs:
 
   build_linux_sdl2_x86_64:
     needs: setup
-    name: Build (Linux)(SDL2)(x86_64)
+    name: Build (Linux SDL2 x86_64)
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash {0}
     steps:
-      - name: Download Artifact with Configuration Information
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.CONFIG_ARTIFACT }}
-
-      - name: Extract Configuration Information and Store in Step Outputs
-        id: store_config
-        run: |
-          version=`sed -E -n -e 's/version= //p' $CONFIG_ARTIFACT_PATH`
-          echo "version=$version" >> $GITHUB_OUTPUT
-
       - name: Install dependencies
         run: |
           sudo apt-get -y update
@@ -73,7 +62,7 @@ jobs:
         id: create_linux_sdl2_x86_64_archive
         run: |
           make -j$(nproc) sdl2 SKIPDEPEND=1 RELEASEBUILD=1
-          archive_file="Linux_SDL2_x86_64.zip"
+          archive_file="Linux.SDL2.x86_64.zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
           zip --junk-paths "${archive_file}" fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
@@ -97,23 +86,12 @@ jobs:
 
   build_linux_sdl1_x86_64:
     needs: setup
-    name: Build (Linux)(SDL1)(x86_64)
+    name: Build (Linux SDL1 x86_64)
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash {0}
     steps:
-      - name: Download Artifact with Configuration Information
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.CONFIG_ARTIFACT }}
-
-      - name: Extract Configuration Information and Store in Step Outputs
-        id: store_config
-        run: |
-          version=`sed -E -n -e 's/version= //p' $CONFIG_ARTIFACT_PATH`
-          echo "version=$version" >> $GITHUB_OUTPUT
-
       - name: Install dependencies
         run: |
           sudo apt-get -y update
@@ -126,7 +104,7 @@ jobs:
         id: create_linux_sdl1_x86_64_archive
         run: |
           make -j$(nproc) sdl SKIPDEPEND=1 RELEASEBUILD=1
-          archive_file="Linux_SDL1_x86_64.zip"
+          archive_file="Linux.SDL1.x86_64.zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
           zip --junk-paths "${archive_file}" fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
@@ -164,34 +142,34 @@ jobs:
           version=`sed -E -n -e 's/version= //p' $CONFIG_ARTIFACT_PATH`
           echo "version=$version" >> $GITHUB_OUTPUT
 
-      - name: Download Artifact (Linux)(SDL2)(x86_64) 
+      - name: Download Artifact (Linux SDL2 x86_64) 
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.SDL2_ARTIFACT }}
 
-      - name: Extract Archive Path (Linux)(SDL2)(x86_64) and Store in Step Outputs
+      - name: Extract Archive Path (Linux SDL2 x86_64) and Store in Step Outputs
         id: store_linux_sdl2_x86_64
         run: |
           archive_path=`sed -E -n -e 's/archive_path= //p' $SDL2_ARTIFACT_PATH`
           echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
 
-      - name: Download Artifact with Archive (Linux)(SDL2)(x86_64)
+      - name: Download Artifact with Archive (Linux SDL2 x86_64)
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.SDL2_ARCHIVE_ARTIFACT }}
 
-      - name: Download Artifact (Linux)(SDL1)(x86_64) 
+      - name: Download Artifact (Linux SDL1 x86_64) 
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.SDL1_ARTIFACT }}
 
-      - name: Extract Archive Path (Linux)(SDL1)(x86_64) and Store in Step Outputs
+      - name: Extract Archive Path (Linux SDL1 x86_64) and Store in Step Outputs
         id: store_linux_sdl1_x86_64
         run: |
           archive_path=`sed -E -n -e 's/archive_path= //p' $SDL1_ARTIFACT_PATH`
           echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
 
-      - name: Download Artifact with Archive (Linux)(SDL1)(x86_64)
+      - name: Download Artifact with Archive (Linux SDL1 x86_64)
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.SDL1_ARCHIVE_ARTIFACT }}
@@ -200,6 +178,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: Nightly build (${{ steps.store_config.outputs.version }})
+          tag_name: latest
           target_commitish: ${{ github.sha }}
           draft: false
           prerelease: false
