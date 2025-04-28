@@ -13,6 +13,9 @@ env:
     SDL1_ARTIFACT: release-sdl1
     SDL1_ARTIFACT_PATH: release-sdl1.txt
     SDL1_ARCHIVE_ARTIFACT: release-sdl1-archive
+    WIN64_ARTIFACT: release-win64
+    WIN64_ARTIFACT_PATH: release-win64.txt
+    WIN64_ARCHIVE_ARTIFACT: release-win64-archive
 
 jobs:
   setup:
@@ -40,6 +43,56 @@ jobs:
         with:
           name: ${{ env.CONFIG_ARTIFACT }}
           path: ${{ env.CONFIG_ARTIFACT_PATH }}
+          retention-days: 1
+
+  build_windows_x86_64:
+    needs: setup
+    name: Build (Windows x86_64)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - name: Install dependencies
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: msys2-devel base-devel binutils mingw-w64-x86_64-toolchain mingw-w64-x86_64-nasm zip wget
+          msystem: MINGW64
+
+      - name: Extract Configuration Information and Store in Step Outputs
+        id: store_config
+        run: |
+          version=`sed -E -n -e 's/version= //p' $CONFIG_ARTIFACT_PATH`
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Clone
+        uses: actions/checkout@v4
+
+      - name: Build
+        id: create_windows_x86_64_archive
+        run: |
+          make -j$(nproc) mingw BUILD_X64_EXE=1 SKIPDEPEND=1 RELEASEBUILD=1
+          archive_file="Windows.x86_64.${{ steps.store_config.outputs.version }}.zip"
+          echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
+          zip --junk-paths "${archive_file}" fbneo64.exe src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
+
+      - name: Create Archive Path
+        run: |
+          echo archive_path= '${{ steps.create_windows_x86_64_archive.outputs.archive_file }}' > $WIN64_ARTIFACT_PATH
+
+      - name: Upload Archive Path
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.WIN64_ARTIFACT }}
+          path: ${{ env.WIN64_ARTIFACT_PATH }}
+          retention-days: 1
+
+      - name: Upload Archive as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.WIN64_ARCHIVE_ARTIFACT }}
+          path: ${{ steps.create_windows_x86_64_archive.outputs.archive_file }}
           retention-days: 1
 
   build_linux_sdl2_x86_64:
@@ -139,7 +192,7 @@ jobs:
           retention-days: 1
 
   release:
-    needs: [ setup, build_linux_sdl2_x86_64, build_linux_sdl1_x86_64 ]
+    needs: [ setup, build_windows_x86_64, build_linux_sdl2_x86_64, build_linux_sdl1_x86_64 ]
     name: Release
     runs-on: ubuntu-latest
     steps:
@@ -154,6 +207,24 @@ jobs:
           version=`sed -E -n -e 's/version= //p' $CONFIG_ARTIFACT_PATH`
           echo "version=$version" >> $GITHUB_OUTPUT
 
+      # Windows x86_64
+      - name: Download Artifact (Windows x86_64)
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.WIN64_ARTIFACT }}
+
+      - name: Extract Archive Path (Windows x86_64) and Store in Step Outputs
+        id: store_windows_x86_64
+        run: |
+          archive_path=`sed -E -n -e 's/archive_path= //p' $WIN64_ARTIFACT_PATH`
+          echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
+
+      - name: Download Artifact with Archive (Windows x86_64)
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.WIN64_ARCHIVE_ARTIFACT }}
+
+      # Linux SDL2 x86_64
       - name: Download Artifact (Linux SDL2 x86_64) 
         uses: actions/download-artifact@v4
         with:
@@ -170,6 +241,7 @@ jobs:
         with:
           name: ${{ env.SDL2_ARCHIVE_ARTIFACT }}
 
+      # Linux SDL1 x86_64
       - name: Download Artifact (Linux SDL1 x86_64) 
         uses: actions/download-artifact@v4
         with:
@@ -197,4 +269,5 @@ jobs:
           files: |
             ${{ steps.store_linux_sdl2_x86_64.outputs.archive_path }}
             ${{ steps.store_linux_sdl1_x86_64.outputs.archive_path }}
+            ${{ steps.store_windows_x86_64.outputs.archive_path }}
           token: ${{ secrets.GITHUB_TOKEN }}
