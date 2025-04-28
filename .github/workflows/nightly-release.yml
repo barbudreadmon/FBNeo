@@ -5,15 +5,15 @@ on:
     branches: [ master ]
 
 env:
-    SDL2_ARTIFACT: release-sdl2
-    SDL2_ARTIFACT_PATH: release-sdl2.txt
-    SDL2_ARCHIVE_ARTIFACT: release-sdl2-archive
-    SDL1_ARTIFACT: release-sdl1
-    SDL1_ARTIFACT_PATH: release-sdl1.txt
-    SDL1_ARCHIVE_ARTIFACT: release-sdl1-archive
-    WIN64_ARTIFACT: release-win64
-    WIN64_ARTIFACT_PATH: release-win64.txt
-    WIN64_ARCHIVE_ARTIFACT: release-win64-archive
+    LINUX_SDL2_X86_64_ARTIFACT: linux-sdl2-x86_64
+    LINUX_SDL2_X86_64_ARTIFACT_PATH: linux-sdl2-x86_64.txt
+    LINUX_SDL2_X86_64_ARCHIVE_ARTIFACT: linux-sdl2-x86_64-archive
+    LINUX_SDL1_X86_64_ARTIFACT: linux-sdl1-x86_64
+    LINUX_SDL1_X86_64_ARTIFACT_PATH: linux-sdl1-x86_64.txt
+    LINUX_SDL1_X86_64_ARCHIVE_ARTIFACT: linux-sdl1-x86_64-archive
+    WINDOWS_X86_64_ARTIFACT: windows-x86_64
+    WINDOWS_X86_64_ARTIFACT_PATH: windows-x86_64.txt
+    WINDOWS_X86_64_ARCHIVE_ARTIFACT: windows-x86_64-archive
 
 jobs:
   build_windows_x86_64:
@@ -43,19 +43,19 @@ jobs:
 
       - name: Create Archive Path
         run: |
-          echo archive_path= '${{ steps.create_windows_x86_64_archive.outputs.archive_file }}' > $WIN64_ARTIFACT_PATH
+          echo archive_path= '${{ steps.create_windows_x86_64_archive.outputs.archive_file }}' > $WINDOWS_X86_64_ARTIFACT_PATH
 
       - name: Upload Archive Path
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.WIN64_ARTIFACT }}
-          path: ${{ env.WIN64_ARTIFACT_PATH }}
+          name: ${{ env.WINDOWS_X86_64_ARTIFACT }}
+          path: ${{ env.WINDOWS_X86_64_ARTIFACT_PATH }}
           retention-days: 1
 
       - name: Upload Archive as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.WIN64_ARCHIVE_ARTIFACT }}
+          name: ${{ env.WINDOWS_X86_64_ARCHIVE_ARTIFACT }}
           path: ${{ steps.create_windows_x86_64_archive.outputs.archive_file }}
           retention-days: 1
 
@@ -84,19 +84,19 @@ jobs:
 
       - name: Create Archive Path
         run: |
-          echo archive_path= '${{ steps.create_linux_sdl2_x86_64_archive.outputs.archive_file }}' > $SDL2_ARTIFACT_PATH
+          echo archive_path= '${{ steps.create_linux_sdl2_x86_64_archive.outputs.archive_file }}' > $LINUX_SDL2_X86_64_ARTIFACT_PATH
 
       - name: Upload Archive Path
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.SDL2_ARTIFACT }}
-          path: ${{ env.SDL2_ARTIFACT_PATH }}
+          name: ${{ env.LINUX_SDL2_X86_64_ARTIFACT }}
+          path: ${{ env.LINUX_SDL2_X86_64_ARTIFACT_PATH }}
           retention-days: 1
 
       - name: Upload Archive as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.SDL2_ARCHIVE_ARTIFACT }}
+          name: ${{ env.LINUX_SDL2_X86_64_ARCHIVE_ARTIFACT }}
           path: ${{ steps.create_linux_sdl2_x86_64_archive.outputs.archive_file }}
           retention-days: 1
 
@@ -125,19 +125,19 @@ jobs:
 
       - name: Create Archive Path
         run: |
-          echo archive_path= '${{ steps.create_linux_sdl1_x86_64_archive.outputs.archive_file }}' > $SDL1_ARTIFACT_PATH
+          echo archive_path= '${{ steps.create_linux_sdl1_x86_64_archive.outputs.archive_file }}' > $LINUX_SDL1_X86_64_ARTIFACT_PATH
 
       - name: Upload Archive Path
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.SDL1_ARTIFACT }}
-          path: ${{ env.SDL1_ARTIFACT_PATH }}
+          name: ${{ env.LINUX_SDL1_X86_64_ARTIFACT }}
+          path: ${{ env.LINUX_SDL1_X86_64_ARTIFACT_PATH }}
           retention-days: 1
 
       - name: Upload Archive as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.SDL1_ARCHIVE_ARTIFACT }}
+          name: ${{ env.LINUX_SDL1_X86_64_ARCHIVE_ARTIFACT }}
           path: ${{ steps.create_linux_sdl1_x86_64_archive.outputs.archive_file }}
           retention-days: 1
 
@@ -150,52 +150,52 @@ jobs:
       - name: Download Artifact (Windows x86_64)
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.WIN64_ARTIFACT }}
+          name: ${{ env.WINDOWS_X86_64_ARTIFACT }}
 
       - name: Extract Archive Path (Windows x86_64) and Store in Step Outputs
         id: store_windows_x86_64
         run: |
-          archive_path=`sed -E -n -e 's/archive_path= //p' $WIN64_ARTIFACT_PATH`
+          archive_path=`sed -E -n -e 's/archive_path= //p' $WINDOWS_X86_64_ARTIFACT_PATH`
           echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
 
       - name: Download Artifact with Archive (Windows x86_64)
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.WIN64_ARCHIVE_ARTIFACT }}
+          name: ${{ env.WINDOWS_X86_64_ARCHIVE_ARTIFACT }}
 
       # Linux SDL2 x86_64
       - name: Download Artifact (Linux SDL2 x86_64) 
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.SDL2_ARTIFACT }}
+          name: ${{ env.LINUX_SDL2_X86_64_ARTIFACT }}
 
       - name: Extract Archive Path (Linux SDL2 x86_64) and Store in Step Outputs
         id: store_linux_sdl2_x86_64
         run: |
-          archive_path=`sed -E -n -e 's/archive_path= //p' $SDL2_ARTIFACT_PATH`
+          archive_path=`sed -E -n -e 's/archive_path= //p' $LINUX_SDL2_X86_64_ARTIFACT_PATH`
           echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
 
       - name: Download Artifact with Archive (Linux SDL2 x86_64)
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.SDL2_ARCHIVE_ARTIFACT }}
+          name: ${{ env.LINUX_SDL2_X86_64_ARCHIVE_ARTIFACT }}
 
       # Linux SDL1 x86_64
       - name: Download Artifact (Linux SDL1 x86_64) 
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.SDL1_ARTIFACT }}
+          name: ${{ env.LINUX_SDL1_X86_64_ARTIFACT }}
 
       - name: Extract Archive Path (Linux SDL1 x86_64) and Store in Step Outputs
         id: store_linux_sdl1_x86_64
         run: |
-          archive_path=`sed -E -n -e 's/archive_path= //p' $SDL1_ARTIFACT_PATH`
+          archive_path=`sed -E -n -e 's/archive_path= //p' $LINUX_SDL1_X86_64_ARTIFACT_PATH`
           echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
 
       - name: Download Artifact with Archive (Linux SDL1 x86_64)
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.SDL1_ARCHIVE_ARTIFACT }}
+          name: ${{ env.LINUX_SDL1_X86_64_ARCHIVE_ARTIFACT }}
 
       - name: Populate Release
         uses: softprops/action-gh-release@v2
