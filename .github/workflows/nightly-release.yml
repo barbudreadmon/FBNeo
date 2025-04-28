@@ -60,6 +60,11 @@ jobs:
           install: msys2-devel base-devel binutils mingw-w64-x86_64-toolchain mingw-w64-x86_64-nasm zip wget
           msystem: MINGW64
 
+      - name: Download Artifact with Configuration Information
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CONFIG_ARTIFACT }}
+
       - name: Extract Configuration Information and Store in Step Outputs
         id: store_config
         run: |
@@ -103,6 +108,11 @@ jobs:
       run:
         shell: bash {0}
     steps:
+      - name: Download Artifact with Configuration Information
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CONFIG_ARTIFACT }}
+
       - name: Extract Configuration Information and Store in Step Outputs
         id: store_config
         run: |
@@ -151,6 +161,11 @@ jobs:
       run:
         shell: bash {0}
     steps:
+      - name: Download Artifact with Configuration Information
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CONFIG_ARTIFACT }}
+
       - name: Extract Configuration Information and Store in Step Outputs
         id: store_config
         run: |
