@@ -197,17 +197,16 @@ jobs:
         with:
           name: ${{ env.LINUX_SDL1_X86_64_ARCHIVE_ARTIFACT }}
 
-      # Finish releasing
-      - name: Delete previous pre-release
-        uses: sgpublic/delete-release-action@v1.1
+      # Finish
+      - name: Delete previous nightly
+        uses: ClementTsang/delete-tag-and-release@v0.3.1
         with:
-          pre-release-drop: true
-          pre-release-keep-count: -1
-          pre-release-drop-tag: true
+          delete_release: true
+          tag_name: latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create new pre-release
+      - name: Release new nightly
         uses: softprops/action-gh-release@v2
         with:
           name: nightly builds
