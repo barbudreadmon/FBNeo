@@ -10,9 +10,9 @@ env:
     SDL2_ARTIFACT: release-sdl2
     SDL2_ARTIFACT_PATH: release-sdl2.txt
     SDL2_ARCHIVE_ARTIFACT: release-sdl2-archive
-    SDL12_ARTIFACT: release-sdl12
-    SDL12_ARTIFACT_PATH: release-sdl12.txt
-    SDL12_ARCHIVE_ARTIFACT: release-sdl12-archive
+    SDL1_ARTIFACT: release-sdl1
+    SDL1_ARTIFACT_PATH: release-sdl1.txt
+    SDL1_ARCHIVE_ARTIFACT: release-sdl1-archive
 
 jobs:
   setup:
@@ -42,7 +42,7 @@ jobs:
           path: ${{ env.CONFIG_ARTIFACT_PATH }}
           retention-days: 1
 
-  linux_sdl2_x86_64:
+  build_linux_sdl2_x86_64:
     needs: setup
     name: Build (Linux)(SDL2)(x86_64)
     runs-on: ubuntu-latest
@@ -77,7 +77,7 @@ jobs:
           make -j$(nproc) sdl2 SKIPDEPEND=1 RELEASEBUILD=1
           archive_file="FinalBurn Neo (Linux)(SDL2)(x86_64).zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
-          zip --junk-paths ${archive_file} fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
+          zip --junk-paths "${archive_file}" fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
       - name: Create Archive Path
         run: |
@@ -97,9 +97,9 @@ jobs:
           path: ${{ steps.create_linux_sdl2_x86_64_archive.outputs.archive_file }}
           retention-days: 1
 
-  linux_sdl12_x86_64:
+  build_linux_sdl1_x86_64:
     needs: setup
-    name: Build (Linux)(SDL1.2)(x86_64)
+    name: Build (Linux)(SDL1)(x86_64)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -127,34 +127,34 @@ jobs:
           fetch-depth: 0
 
       - name: Build
-        id: create_linux_sdl12_x86_64_archive
+        id: create_linux_sdl1_x86_64_archive
         run: |
           make -j$(nproc) sdl SKIPDEPEND=1 RELEASEBUILD=1
-          archive_file="FinalBurn Neo (Linux)(SDL1.2)(x86_64).zip"
+          archive_file="FinalBurn Neo (Linux)(SDL1)(x86_64).zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
-          zip --junk-paths ${archive_file} fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
+          zip --junk-paths "${archive_file}" fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
       - name: Create Archive Path
         run: |
-          echo archive_path= '${{ steps.create_linux_sdl12_x86_64_archive.outputs.archive_file }}' > $SDL12_ARTIFACT_PATH
+          echo archive_path= '${{ steps.create_linux_sdl12_x86_64_archive.outputs.archive_file }}' > $SDL1_ARTIFACT_PATH
 
       - name: Upload Archive Path
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.SDL12_ARTIFACT }}
-          path: ${{ env.SDL12_ARTIFACT_PATH }}
+          name: ${{ env.SDL1_ARTIFACT }}
+          path: ${{ env.SDL1_ARTIFACT_PATH }}
           retention-days: 1
 
       - name: Upload Archive as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.SDL12_ARCHIVE_ARTIFACT }}
-          path: ${{ steps.create_linux_sdl12_x86_64_archive.outputs.archive_file }}
+          name: ${{ env.SDL1_ARCHIVE_ARTIFACT }}
+          path: ${{ steps.create_linux_sdl1_x86_64_archive.outputs.archive_file }}
           retention-days: 1
 
   release:
-    needs: [ setup, linux_sdl2_x86_64, linux_sdl12_x86_64 ]
-    name: Create GitHub Release
+    needs: [ setup, build_linux_sdl2_x86_64, build_linux_sdl1_x86_64 ]
+    name: Release
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifact with Configuration Information
@@ -184,21 +184,21 @@ jobs:
         with:
           name: ${{ env.SDL2_ARCHIVE_ARTIFACT }}
 
-      - name: Download Artifact (Linux)(SDL1.2)(x86_64) 
+      - name: Download Artifact (Linux)(SDL1)(x86_64) 
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.SDL12_ARTIFACT }}
+          name: ${{ env.SDL1_ARTIFACT }}
 
-      - name: Extract Archive Path (Linux)(SDL1.2)(x86_64) and Store in Step Outputs
-        id: store_linux_sdl12_x86_64
+      - name: Extract Archive Path (Linux)(SDL1)(x86_64) and Store in Step Outputs
+        id: store_linux_sdl1_x86_64
         run: |
-          archive_path=`sed -E -n -e 's/archive_path= //p' $SDL12_ARTIFACT_PATH`
+          archive_path=`sed -E -n -e 's/archive_path= //p' $SDL1_ARTIFACT_PATH`
           echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
 
-      - name: Download Artifact with Archive (Linux)(SDL1.2)(x86_64)
+      - name: Download Artifact with Archive (Linux)(SDL1)(x86_64)
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.SDL12_ARCHIVE_ARTIFACT }}
+          name: ${{ env.SDL1_ARCHIVE_ARTIFACT }}
 
       - name: Populate Release
         uses: softprops/action-gh-release@v2
@@ -211,5 +211,5 @@ jobs:
           make_latest: true
           files: |
             ${{ steps.store_linux_sdl2_x86_64.outputs.archive_path }}
-            ${{ steps.store_linux_sdl12_x86_64.outputs.archive_path }}
+            ${{ steps.store_linux_sdl1_x86_64.outputs.archive_path }}
           token: ${{ secrets.GITHUB_TOKEN }}
