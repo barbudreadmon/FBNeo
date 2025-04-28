@@ -153,7 +153,7 @@ jobs:
           retention-days: 1
 
   release:
-    needs: [ setup, source, linux_sdl2_x86_64, linux_sdl12_x86_64 ]
+    needs: [ setup, linux_sdl2_x86_64, linux_sdl12_x86_64 ]
     name: Create GitHub Release
     runs-on: ubuntu-latest
     steps:
