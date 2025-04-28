@@ -37,7 +37,7 @@ jobs:
         id: create_windows_x86_64_archive
         run: |
           make -j$(nproc) mingw BUILD_X64_EXE=1 SKIPDEPEND=1 RELEASEBUILD=1
-          archive_file="Windows.x86_64.zip"
+          archive_file="${{ env.WINDOWS_X86_64_ARTIFACT }}.zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
           zip --junk-paths "${archive_file}" fbneo64.exe src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
@@ -78,7 +78,7 @@ jobs:
         id: create_linux_sdl2_x86_64_archive
         run: |
           make -j$(nproc) sdl2 SKIPDEPEND=1 RELEASEBUILD=1
-          archive_file="Linux.SDL2.x86_64.zip"
+          archive_file="${{ env.LINUX_SDL2_X86_64_ARTIFACT }}.zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
           zip --junk-paths "${archive_file}" fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
@@ -119,7 +119,7 @@ jobs:
         id: create_linux_sdl1_x86_64_archive
         run: |
           make -j$(nproc) sdl SKIPDEPEND=1 RELEASEBUILD=1
-          archive_file="Linux.SDL1.x86_64.zip"
+          archive_file="${{ env.LINUX_SDL1_X86_64_ARTIFACT }}.zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
           zip --junk-paths "${archive_file}" fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
@@ -197,7 +197,17 @@ jobs:
         with:
           name: ${{ env.LINUX_SDL1_X86_64_ARCHIVE_ARTIFACT }}
 
-      - name: Populate Release
+      # Finish releasing
+      - name: Delete previous pre-release
+        uses: sgpublic/delete-release-action@v1.1
+        with:
+          pre-release-drop: true
+          pre-release-keep-count: -1
+          pre-release-drop-tag: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create new pre-release
         uses: softprops/action-gh-release@v2
         with:
           name: nightly builds
