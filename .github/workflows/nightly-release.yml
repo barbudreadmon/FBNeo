@@ -2,354 +2,214 @@ name: "nightly-release"
 
 on:
   push:
-    branches:
-      - "master"
+    branches: [ master ]
+
+env:
+    CONFIG_ARTIFACT: release-config
+    CONFIG_ARTIFACT_PATH: release-config.txt
+    SDL2_ARTIFACT: release-sdl2
+    SDL2_ARTIFACT_PATH: release-sdl2.txt
+    SDL2_ARCHIVE_ARTIFACT: release-sdl2-archive
+    SDL12_ARTIFACT: release-sdl12
+    SDL12_ARTIFACT_PATH: release-sdl12.txt
+    SDL12_ARCHIVE_ARTIFACT: release-sdl12-archive
 
 jobs:
-  nightly_release:
-    name: Create release
+  setup:
+    name: Setup
     runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.nightly_release.outputs.upload_url }}
-
     steps:
-      - name: Create release
-        id: nightly_release
-        uses: "marvinpinto/action-automatic-releases@latest"
+      # Need commit history
+      - name: Clone Project
+        uses: actions/checkout@v4
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
-          prerelease: true
-          title: "nightly builds"
+          fetch-depth: 0
 
-  build_windows:
-    name: Windows x32
-    needs: nightly_release
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-
-    steps:
-      - name: Install Windows MSYS2 dependencies
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: msys2-devel base-devel binutils mingw-w64-i686-toolchain mingw-w64-i686-nasm zip wget
-          msystem: MINGW32
-
-      - name: Downgrade pthread
+      - name: Set Vars
+        id: get_vars
         run: |
-          wget https://github.com/finalburnneo/msys2-package-archives/raw/main/mingw-w64-i686-libwinpthread-git-6.0.0.5203.9afaf1c2-1-any.pkg.tar.xz
-          wget https://github.com/finalburnneo/msys2-package-archives/raw/main/mingw-w64-i686-winpthreads-git-6.0.0.5203.9afaf1c2-1-any.pkg.tar.xz
-          pacman -U --noconfirm mingw-w64-i686-winpthreads-git-6.0.0.5203.9afaf1c2-1-any.pkg.tar.xz mingw-w64-i686-libwinpthread-git-6.0.0.5203.9afaf1c2-1-any.pkg.tar.xz
+          version=`git rev-parse --verify --short HEAD`
+          echo "version=$version" >> $GITHUB_OUTPUT
 
-      - uses: actions/checkout@v2
-
-      - name: Build FBNeo
+      - name: Create Artifact with Configuration Details
         run: |
-          make -j$(nproc) mingw SKIPDEPEND=1 RELEASEBUILD=1
+          echo version= '${{ steps.get_vars.outputs.version }}' >> $CONFIG_ARTIFACT_PATH
 
-      - name: Upload Artifact
+      - name: Upload Artifact for Use by Dependent Steps
         uses: actions/upload-artifact@v4
         with:
-          name: Windows x32
-          path: |
-            fbneo.exe
+          name: ${{ env.CONFIG_ARTIFACT }}
+          path: ${{ env.CONFIG_ARTIFACT_PATH }}
+          retention-days: 1
 
-      - name: Build release asset
-        run: |
-          zip --junk-paths "Windows x32.zip" fbneo.exe src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
-
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.nightly_release.outputs.upload_url }}
-          asset_name: Windows x32.zip
-          asset_path: Windows x32.zip
-          asset_content_type: application/zip
-
-  build_windows_debug:
-    name: Windows x32 (Debug)
-    needs: nightly_release
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-
-    steps:
-      - name: Install Windows MSYS2 dependencies
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: msys2-devel base-devel binutils mingw-w64-i686-toolchain mingw-w64-i686-nasm zip wget
-          msystem: MINGW32
-
-      - name: Downgrade pthread
-        run: |
-          wget https://github.com/finalburnneo/msys2-package-archives/raw/main/mingw-w64-i686-libwinpthread-git-6.0.0.5203.9afaf1c2-1-any.pkg.tar.xz
-          wget https://github.com/finalburnneo/msys2-package-archives/raw/main/mingw-w64-i686-winpthreads-git-6.0.0.5203.9afaf1c2-1-any.pkg.tar.xz
-          pacman -U --noconfirm mingw-w64-i686-winpthreads-git-6.0.0.5203.9afaf1c2-1-any.pkg.tar.xz mingw-w64-i686-libwinpthread-git-6.0.0.5203.9afaf1c2-1-any.pkg.tar.xz
-
-      - uses: actions/checkout@v2
-
-      - name: Build FBNeo
-        run: |
-          make -j$(nproc) mingw SKIPDEPEND=1
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Windows x32 (Debug)
-          path: |
-            fbneod.exe
-
-      - name: Build release asset
-        run: |
-          zip --junk-paths "Windows x32 (Debug).zip" fbneod.exe src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
-
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.nightly_release.outputs.upload_url }}
-          asset_name: Windows x32 (Debug).zip
-          asset_path: Windows x32 (Debug).zip
-          asset_content_type: application/zip
-
-  build_windows64:
-    name: Windows x64
-    needs: nightly_release
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-
-    steps:
-      - name: Install Windows MSYS2 dependencies
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: msys2-devel base-devel binutils mingw-w64-x86_64-toolchain mingw-w64-x86_64-nasm zip wget
-          msystem: MINGW64
-
-      - uses: actions/checkout@v2
-
-      - name: Build FBNeo
-        run: |
-          make -j$(nproc) mingw BUILD_X64_EXE=1 SKIPDEPEND=1 RELEASEBUILD=1
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Windows x64
-          path: |
-            fbneo64.exe
-
-      - name: Build release asset
-        run: |
-          zip --junk-paths "Windows x64.zip" fbneo64.exe src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
-
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.nightly_release.outputs.upload_url }}
-          asset_name: Windows x64.zip
-          asset_path: Windows x64.zip
-          asset_content_type: application/zip
-
-  build_windows64_debug:
-    name: Windows x64 (Debug)
-    needs: nightly_release
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-
-    steps:
-      - name: Install Windows MSYS2 dependencies
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: msys2-devel base-devel binutils mingw-w64-x86_64-toolchain mingw-w64-x86_64-nasm zip wget
-          msystem: MINGW64
-
-      - uses: actions/checkout@v2
-
-      - name: Build FBNeo
-        run: |
-          make -j$(nproc) mingw BUILD_X64_EXE=1 SKIPDEPEND=1
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Windows x64 (Debug)
-          path: |
-            fbneo64d.exe
-
-      - name: Build release asset
-        run: |
-          zip --junk-paths "Windows x64 (Debug).zip" fbneo64d.exe src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
-
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.nightly_release.outputs.upload_url }}
-          asset_name: Windows x64 (Debug).zip
-          asset_path: Windows x64 (Debug).zip
-          asset_content_type: application/zip
-
-  build_linux_sdl2:
-    name: Linux SDL 2
-    needs: nightly_release
+  linux_sdl2_x86_64:
+    needs: setup
+    name: Build (Linux)(SDL2)(x86_64)
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash {0}
-
     steps:
-      - name: Install Linux dependencies
+      - name: Download Artifact with Configuration Information
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CONFIG_ARTIFACT }}
+
+      - name: Extract Configuration Information and Store in Step Outputs
+        id: store_config
+        run: |
+          version=`sed -E -n -e 's/version= //p' $CONFIG_ARTIFACT_PATH`
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
         run: |
           sudo apt-get -y update
           sudo apt-get -y install libsdl2-dev libsdl2-image-dev
 
-      - uses: actions/checkout@v2
+      - name: Clone
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Build FBNeo
+      - name: Build
+        id: create_linux_sdl2_x86_64_archive
         run: |
           make -j$(nproc) sdl2 SKIPDEPEND=1 RELEASEBUILD=1
+          archive_file="FinalBurn Neo (Linux)(SDL2)(x86_64).zip"
+          echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
+          zip --junk-paths ${archive_file} fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
-      - name: Upload Artifact
+      - name: Create Archive Path
+        run: |
+          echo archive_path= '${{ steps.create_linux_sdl2_x86_64_archive.outputs.archive_file }}' > $SDL2_ARTIFACT_PATH
+
+      - name: Upload Archive Path
         uses: actions/upload-artifact@v4
         with:
-          name: Linux SDL 2
-          path: |
-            fbneo
+          name: ${{ env.SDL2_ARTIFACT }}
+          path: ${{ env.SDL2_ARTIFACT_PATH }}
+          retention-days: 1
 
-      - name: Build release asset
-        run: |
-          zip --junk-paths "Linux SDL 2.zip" fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
-
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Archive as Artifact
+        uses: actions/upload-artifact@v4
         with:
-          upload_url: ${{ needs.nightly_release.outputs.upload_url }}
-          asset_name: Linux SDL 2.zip
-          asset_path: Linux SDL 2.zip
-          asset_content_type: application/zip
+          name: ${{ env.SDL2_ARCHIVE_ARTIFACT }}
+          path: ${{ steps.create_linux_sdl2_x86_64_archive.outputs.archive_file }}
+          retention-days: 1
 
-  build_linux_sdl12:
-    name: Linux SDL 1.2
-    needs: nightly_release
+  linux_sdl12_x86_64:
+    needs: setup
+    name: Build (Linux)(SDL1.2)(x86_64)
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash {0}
-
     steps:
-      - name: Install Linux dependencies
+      - name: Download Artifact with Configuration Information
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CONFIG_ARTIFACT }}
+
+      - name: Extract Configuration Information and Store in Step Outputs
+        id: store_config
+        run: |
+          version=`sed -E -n -e 's/version= //p' $CONFIG_ARTIFACT_PATH`
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
         run: |
           sudo apt-get -y update
           sudo apt-get -y install libsdl1.2-dev
 
-      - uses: actions/checkout@v2
+      - name: Clone
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Build FBNeo
+      - name: Build
+        id: create_linux_sdl12_x86_64_archive
         run: |
           make -j$(nproc) sdl SKIPDEPEND=1 RELEASEBUILD=1
+          archive_file="FinalBurn Neo (Linux)(SDL1.2)(x86_64).zip"
+          echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
+          zip --junk-paths ${archive_file} fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
-      - name: Upload Artifact
+      - name: Create Archive Path
+        run: |
+          echo archive_path= '${{ steps.create_linux_sdl12_x86_64_archive.outputs.archive_file }}' > $SDL12_ARTIFACT_PATH
+
+      - name: Upload Archive Path
         uses: actions/upload-artifact@v4
         with:
-          name: Linux SDL 1.2
-          path: |
-            fbneo
+          name: ${{ env.SDL12_ARTIFACT }}
+          path: ${{ env.SDL12_ARTIFACT_PATH }}
+          retention-days: 1
 
-      - name: Build release asset
-        run: |
-          zip --junk-paths "Linux SDL 1.2.zip" fbneo src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
-
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Archive as Artifact
+        uses: actions/upload-artifact@v4
         with:
-          upload_url: ${{ needs.nightly_release.outputs.upload_url }}
-          asset_name: Linux SDL 1.2.zip
-          asset_path: Linux SDL 1.2.zip
-          asset_content_type: application/zip
+          name: ${{ env.SDL12_ARCHIVE_ARTIFACT }}
+          path: ${{ steps.create_linux_sdl12_x86_64_archive.outputs.archive_file }}
+          retention-days: 1
 
-  build_macos_x86_64:
-    name: macOS (x86_64)
-    needs: nightly_release
-    runs-on: macos-13 # Required version for x86_64
+  release:
+    needs: [ setup, source, linux_sdl2_x86_64, linux_sdl12_x86_64 ]
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Build FBNeo
-        run: |
-          cd projectfiles/xcode
-          xcodebuild ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO -target Emulator -configuration Release
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Download Artifact with Configuration Information
+        uses: actions/download-artifact@v4
         with:
-          name: macOS_x86_64
-          path: "projectfiles/xcode/build/Release/FinalBurn Neo.app"
+          name: ${{ env.CONFIG_ARTIFACT }}
 
-      - name: Compress macOS app
+      - name: Extract Configuration Information and Store in Step Outputs
+        id: store_config
         run: |
-          cd projectfiles/xcode/build/Release
-          zip -r "FinalBurn_Neo_macOS_x86_64.zip" "FinalBurn Neo.app"
+          version=`sed -E -n -e 's/version= //p' $CONFIG_ARTIFACT_PATH`
+          echo "version=$version" >> $GITHUB_OUTPUT
 
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download Artifact (Linux)(SDL2)(x86_64) 
+        uses: actions/download-artifact@v4
         with:
-          upload_url: ${{ needs.nightly_release.outputs.upload_url }}
-          asset_name: FinalBurn_Neo_macOS_x86_64.zip
-          asset_path: projectfiles/xcode/build/Release/FinalBurn_Neo_macOS_x86_64.zip
-          asset_content_type: application/zip
+          name: ${{ env.SDL2_ARTIFACT }}
 
-  build_macos_arm64:
-    name: macOS (arm64)
-    needs: nightly_release
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build FBNeo
+      - name: Extract Archive Path (Linux)(SDL2)(x86_64) and Store in Step Outputs
+        id: store_linux_sdl2_x86_64
         run: |
-          cd projectfiles/xcode
-          xcodebuild ARCHS=arm64 ONLY_ACTIVE_ARCH=NO -target Emulator -configuration Release
+          archive_path=`sed -E -n -e 's/archive_path= //p' $SDL2_ARTIFACT_PATH`
+          echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Download Artifact with Archive (Linux)(SDL2)(x86_64)
+        uses: actions/download-artifact@v4
         with:
-          name: macOS__arm64
-          path: "projectfiles/xcode/build/Release/FinalBurn Neo.app"
+          name: ${{ env.SDL2_ARCHIVE_ARTIFACT }}
 
-      - name: Compress macOS app
+      - name: Download Artifact (Linux)(SDL1.2)(x86_64) 
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SDL12_ARTIFACT }}
+
+      - name: Extract Archive Path (Linux)(SDL1.2)(x86_64) and Store in Step Outputs
+        id: store_linux_sdl12_x86_64
         run: |
-          cd projectfiles/xcode/build/Release
-          zip -r "FinalBurn_Neo_macOS_arm64.zip" "FinalBurn Neo.app"
+          archive_path=`sed -E -n -e 's/archive_path= //p' $SDL12_ARTIFACT_PATH`
+          echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
 
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download Artifact with Archive (Linux)(SDL1.2)(x86_64)
+        uses: actions/download-artifact@v4
         with:
-          upload_url: ${{ needs.nightly_release.outputs.upload_url }}
-          asset_name: FinalBurn_Neo_macOS_arm64.zip
-          asset_path: projectfiles/xcode/build/Release/FinalBurn_Neo_macOS_arm64.zip
-          asset_content_type: application/zip
+          name: ${{ env.SDL12_ARCHIVE_ARTIFACT }}
+
+      - name: Populate Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.store_config.outputs.version }}
+          name: ${{ steps.store_config.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          draft: false
+          prerelease: true
+          make_latest: true
+          files: |
+            ${{ steps.store_linux_sdl2_x86_64.outputs.archive_path }}
+            ${{ steps.store_linux_sdl12_x86_64.outputs.archive_path }}
+          token: ${{ secrets.GITHUB_TOKEN }}
