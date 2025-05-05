@@ -218,6 +218,7 @@ jobs:
   build_linux_sdl2_x86_64:
     name: Build (Linux SDL2 x86_64)
     runs-on: ubuntu-latest
+    continue-on-error: true
     defaults:
       run:
         shell: bash {0}
@@ -259,6 +260,7 @@ jobs:
   build_linux_sdl1_x86_64:
     name: Build (Linux SDL1 x86_64)
     runs-on: ubuntu-latest
+    continue-on-error: true
     defaults:
       run:
         shell: bash {0}
@@ -300,6 +302,7 @@ jobs:
   build_macos_x86_64:
     name: Build (MacOS x86_64)
     runs-on: macos-13 # Required version for x86_64
+    continue-on-error: true
     steps:
       - name: Clone
         uses: actions/checkout@v4
@@ -312,7 +315,7 @@ jobs:
           cd ../..
           archive_file="${{ env.MACOS_X86_64_ARTIFACT }}.zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
-          zip --junk-paths "${archive_file}" "projectfiles/xcode/build/Release/FinalBurn Neo.app" src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
+          zip -jr "${archive_file}" projectfiles/xcode/build/Release/FinalBurn\ Neo.app src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
       - name: Create Archive Path
         run: |
@@ -335,6 +338,7 @@ jobs:
   build_macos_arm64:
     name: Build (MacOS arm64)
     runs-on: macos-latest
+    continue-on-error: true
     steps:
       - name: Clone
         uses: actions/checkout@v4
@@ -347,7 +351,7 @@ jobs:
           cd ../..
           archive_file="${{ env.MACOS_ARM64_ARTIFACT }}.zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
-          zip --junk-paths "${archive_file}" "projectfiles/xcode/build/Release/FinalBurn Neo.app" src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
+          zip -jr "${archive_file}" projectfiles/xcode/build/Release/FinalBurn\ Neo.app src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
       - name: Create Archive Path
         run: |
@@ -532,6 +536,6 @@ jobs:
             ${{ steps.store_windows_x86_32.outputs.archive_path }}
             ${{ steps.store_windows_x86_64_debug.outputs.archive_path }}
             ${{ steps.store_windows_x86_32_debug.outputs.archive_path }}
-            ${{ steps.store_macos_x86_64_debug.outputs.archive_path }}
-            ${{ steps.store_macos_arm64_debug.outputs.archive_path }}
+            ${{ steps.store_macos_x86_64.outputs.archive_path }}
+            ${{ steps.store_macos_arm64.outputs.archive_path }}
           token: ${{ secrets.GITHUB_TOKEN }}
