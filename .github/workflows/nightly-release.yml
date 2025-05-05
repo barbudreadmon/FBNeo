@@ -74,6 +74,49 @@ jobs:
           path: ${{ steps.create_windows_x86_64_archive.outputs.archive_file }}
           retention-days: 1
 
+  build_windows_x86_64_debug:
+    name: Build (Windows x86_64 Debug)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - name: Install dependencies
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: msys2-devel base-devel binutils mingw-w64-x86_64-toolchain mingw-w64-x86_64-nasm zip wget
+          msystem: MINGW64
+
+      - name: Clone
+        uses: actions/checkout@v4
+
+      - name: Build
+        id: create_windows_x86_64_debug_archive
+        run: |
+          make -j$(nproc) mingw BUILD_X64_EXE=1 SKIPDEPEND=1
+          archive_file="${{ env.WINDOWS_X86_64_DEBUG_ARTIFACT }}.zip"
+          echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
+          zip --junk-paths "${archive_file}" fbneo64d.exe src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
+
+      - name: Create Archive Path
+        run: |
+          echo archive_path= '${{ steps.create_windows_x86_64_debug_archive.outputs.archive_file }}' > $WINDOWS_X86_64_DEBUG_ARTIFACT_PATH
+
+      - name: Upload Archive Path
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.WINDOWS_X86_64_DEBUG_ARTIFACT }}
+          path: ${{ env.WINDOWS_X86_64_DEBUG_ARTIFACT_PATH }}
+          retention-days: 1
+
+      - name: Upload Archive as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.WINDOWS_X86_64_DEBUG_ARCHIVE_ARTIFACT }}
+          path: ${{ steps.create_windows_x86_64_debug_archive.outputs.archive_file }}
+          retention-days: 1
+
   build_windows_x86_32:
     name: Build (Windows x86_32)
     runs-on: windows-latest
@@ -123,49 +166,6 @@ jobs:
           path: ${{ steps.create_windows_x86_32_archive.outputs.archive_file }}
           retention-days: 1
 
-  build_windows_x86_64_debug:
-    name: Build (Windows x86_64 Debug)
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-      - name: Install dependencies
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: msys2-devel base-devel binutils mingw-w64-x86_64-toolchain mingw-w64-x86_64-nasm zip wget
-          msystem: MINGW64
-
-      - name: Clone
-        uses: actions/checkout@v4
-
-      - name: Build
-        id: create_windows_x86_64_debug_archive
-        run: |
-          make -j$(nproc) mingw BUILD_X64_EXE=1 SKIPDEPEND=1
-          archive_file="${{ env.WINDOWS_X86_64_DEBUG_ARTIFACT }}.zip"
-          echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
-          zip --junk-paths "${archive_file}" fbneo64d.exe src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
-
-      - name: Create Archive Path
-        run: |
-          echo archive_path= '${{ steps.create_windows_x86_64_debug_archive.outputs.archive_file }}' > $WINDOWS_X86_64_DEBUG_ARTIFACT_PATH
-
-      - name: Upload Archive Path
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.WINDOWS_X86_64_DEBUG_ARTIFACT }}
-          path: ${{ env.WINDOWS_X86_64_DEBUG_ARTIFACT_PATH }}
-          retention-days: 1
-
-      - name: Upload Archive as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.WINDOWS_X86_64_DEBUG_ARCHIVE_ARTIFACT }}
-          path: ${{ steps.create_windows_x86_64_debug_archive.outputs.archive_file }}
-          retention-days: 1
-
   build_windows_x86_32_debug:
     name: Build (Windows x86_32 Debug)
     runs-on: windows-latest
@@ -199,7 +199,7 @@ jobs:
 
       - name: Create Archive Path
         run: |
-          echo archive_path= '${{ steps.create_windows_x86_32_archive.outputs.archive_file }}' > $WINDOWS_X86_32_DEBUG_ARTIFACT_PATH
+          echo archive_path= '${{ steps.create_windows_x86_32_debug_archive.outputs.archive_file }}' > $WINDOWS_X86_32_DEBUG_ARTIFACT_PATH
 
       - name: Upload Archive Path
         uses: actions/upload-artifact@v4
@@ -378,7 +378,7 @@ jobs:
           retention-days: 1
 
   release:
-    needs: [ build_windows_x86_64, build_windows_x86_32, build_windows_x86_64_debug, build_windows_x86_32_debug, build_linux_sdl2_x86_64, build_linux_sdl1_x86_64, build_macos_x86_64, build_macos_arm64 ]
+    needs: [ build_windows_x86_64, build_windows_x86_64_debug, build_windows_x86_32, build_windows_x86_32_debug, build_linux_sdl2_x86_64, build_linux_sdl1_x86_64, build_macos_x86_64, build_macos_arm64 ]
     name: Release
     runs-on: ubuntu-latest
     steps:
@@ -399,23 +399,6 @@ jobs:
         with:
           name: ${{ env.WINDOWS_X86_64_ARCHIVE_ARTIFACT }}
 
-      # Windows x86_32
-      - name: Download Artifact (Windows x86_32)
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.WINDOWS_X86_32_ARTIFACT }}
-
-      - name: Extract Archive Path (Windows x86_32) and Store in Step Outputs
-        id: store_windows_x86_32
-        run: |
-          archive_path=`sed -E -n -e 's/archive_path= //p' $WINDOWS_X86_32_ARTIFACT_PATH`
-          echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
-
-      - name: Download Artifact with Archive (Windows x86_32)
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.WINDOWS_X86_32_ARCHIVE_ARTIFACT }}
-
       # Windows x86_64 Debug
       - name: Download Artifact (Windows x86_64 Debug)
         uses: actions/download-artifact@v4
@@ -432,6 +415,23 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.WINDOWS_X86_64_DEBUG_ARCHIVE_ARTIFACT }}
+
+      # Windows x86_32
+      - name: Download Artifact (Windows x86_32)
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.WINDOWS_X86_32_ARTIFACT }}
+
+      - name: Extract Archive Path (Windows x86_32) and Store in Step Outputs
+        id: store_windows_x86_32
+        run: |
+          archive_path=`sed -E -n -e 's/archive_path= //p' $WINDOWS_X86_32_ARTIFACT_PATH`
+          echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
+
+      - name: Download Artifact with Archive (Windows x86_32)
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.WINDOWS_X86_32_ARCHIVE_ARTIFACT }}
 
       # Windows x86_32 Debug
       - name: Download Artifact (Windows x86_32 Debug)
