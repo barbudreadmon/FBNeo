@@ -312,10 +312,13 @@ jobs:
         run: |
           cd projectfiles/xcode
           xcodebuild ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO -target Emulator -configuration Release
-          cd ../..
+          cd build/Release
           archive_file="${{ env.MACOS_X86_64_ARTIFACT }}.zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
-          zip -jr "${archive_file}" projectfiles/xcode/build/Release/FinalBurn\ Neo.app src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
+          zip -r "${archive_file}" FinalBurn\ Neo.app
+          mv "${archive_file}" ../../../..
+          cd ../../../..
+          zip -uj "${archive_file}" src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
       - name: Create Archive Path
         run: |
@@ -348,10 +351,13 @@ jobs:
         run: |
           cd projectfiles/xcode
           xcodebuild ARCHS=arm64 ONLY_ACTIVE_ARCH=NO -target Emulator -configuration Release
-          cd ../..
+          cd build/Release
           archive_file="${{ env.MACOS_ARM64_ARTIFACT }}.zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
-          zip -jr "${archive_file}" projectfiles/xcode/build/Release/FinalBurn\ Neo.app src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
+          zip -r "${archive_file}" FinalBurn\ Neo.app
+          mv "${archive_file}" ../../../..
+          cd ../../../..
+          zip -uj "${archive_file}" src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
 
       - name: Create Archive Path
         run: |
@@ -445,69 +451,81 @@ jobs:
           name: ${{ env.WINDOWS_X86_32_DEBUG_ARCHIVE_ARTIFACT }}
 
       # Linux SDL2 x86_64
-      - name: Download Artifact (Linux SDL2 x86_64) 
+      - name: Download Artifact (Linux SDL2 x86_64)
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.LINUX_SDL2_X86_64_ARTIFACT }}
 
       - name: Extract Archive Path (Linux SDL2 x86_64) and Store in Step Outputs
         id: store_linux_sdl2_x86_64
+        continue-on-error: true
         run: |
           archive_path=`sed -E -n -e 's/archive_path= //p' $LINUX_SDL2_X86_64_ARTIFACT_PATH`
           echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
 
       - name: Download Artifact with Archive (Linux SDL2 x86_64)
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.LINUX_SDL2_X86_64_ARCHIVE_ARTIFACT }}
 
       # Linux SDL1 x86_64
-      - name: Download Artifact (Linux SDL1 x86_64) 
+      - name: Download Artifact (Linux SDL1 x86_64)
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.LINUX_SDL1_X86_64_ARTIFACT }}
 
       - name: Extract Archive Path (Linux SDL1 x86_64) and Store in Step Outputs
         id: store_linux_sdl1_x86_64
+        continue-on-error: true
         run: |
           archive_path=`sed -E -n -e 's/archive_path= //p' $LINUX_SDL1_X86_64_ARTIFACT_PATH`
           echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
 
       - name: Download Artifact with Archive (Linux SDL1 x86_64)
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.LINUX_SDL1_X86_64_ARCHIVE_ARTIFACT }}
 
       # MacOS x86_64
-      - name: Download Artifact (MacOS x86_64) 
+      - name: Download Artifact (MacOS x86_64)
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.MACOS_X86_64_ARTIFACT }}
 
       - name: Extract Archive Path (MacOS x86_64) and Store in Step Outputs
         id: store_macos_x86_64
+        continue-on-error: true
         run: |
           archive_path=`sed -E -n -e 's/archive_path= //p' $MACOS_X86_64_ARTIFACT_PATH`
           echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
 
       - name: Download Artifact with Archive (MacOS x86_64)
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.MACOS_X86_64_ARCHIVE_ARTIFACT }}
 
       # MacOS arm64
-      - name: Download Artifact (MacOS arm64) 
+      - name: Download Artifact (MacOS arm64)
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.MACOS_ARM64_ARTIFACT }}
 
       - name: Extract Archive Path (MacOS arm64) and Store in Step Outputs
         id: store_macos_arm64
+        continue-on-error: true
         run: |
           archive_path=`sed -E -n -e 's/archive_path= //p' $MACOS_ARM64_ARTIFACT_PATH`
           echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
 
       - name: Download Artifact with Archive (MacOS arm64)
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.MACOS_ARM64_ARCHIVE_ARTIFACT }}
