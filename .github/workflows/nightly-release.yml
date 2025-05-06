@@ -530,6 +530,11 @@ jobs:
         with:
           name: ${{ env.MACOS_ARM64_ARCHIVE_ARTIFACT }}
 
+      # Prepare description
+      - name: Prepare description
+        run: |
+          git log -1 --pretty=format:"%s (%an)" > release_body.md
+
       # Finish
       - name: Delete previous nightly
         uses: ClementTsang/delete-tag-and-release@v0.3.1
@@ -545,6 +550,7 @@ jobs:
           name: nightly builds
           tag_name: latest
           target_commitish: ${{ github.sha }}
+          body_path: release_body.md
           draft: false
           prerelease: true
           files: |
