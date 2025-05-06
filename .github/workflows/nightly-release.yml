@@ -5,24 +5,27 @@ on:
     branches: [ master ]
 
 env:
+    RELEASE_BODY_ARTIFACT: release-body
+    RELEASE_BODY_ARTIFACT_PATH: release-body
+    RELEASE_BODY_ARCHIVE_ARTIFACT: release-body
+    WINDOWS_X86_64_ARTIFACT: windows-x86_64
+    WINDOWS_X86_64_ARTIFACT_PATH: windows-x86_64.txt
+    WINDOWS_X86_64_ARCHIVE_ARTIFACT: windows-x86_64-archive
+    WINDOWS_X86_64_DEBUG_ARTIFACT: windows-x86_64-debug
+    WINDOWS_X86_64_DEBUG_ARTIFACT_PATH: windows-x86_64-debug.txt
+    WINDOWS_X86_64_DEBUG_ARCHIVE_ARTIFACT: windows-x86_64-debug-archive
+    WINDOWS_X86_32_ARTIFACT: windows-x86_32
+    WINDOWS_X86_32_ARTIFACT_PATH: windows-x86_32.txt
+    WINDOWS_X86_32_ARCHIVE_ARTIFACT: windows-x86_32-archive
+    WINDOWS_X86_32_DEBUG_ARTIFACT: windows-x86_32-debug
+    WINDOWS_X86_32_DEBUG_ARTIFACT_PATH: windows-x86_32-debug.txt
+    WINDOWS_X86_32_DEBUG_ARCHIVE_ARTIFACT: windows-x86_32-debug-archive
     LINUX_SDL2_X86_64_ARTIFACT: linux-sdl2-x86_64
     LINUX_SDL2_X86_64_ARTIFACT_PATH: linux-sdl2-x86_64.txt
     LINUX_SDL2_X86_64_ARCHIVE_ARTIFACT: linux-sdl2-x86_64-archive
     LINUX_SDL1_X86_64_ARTIFACT: linux-sdl1-x86_64
     LINUX_SDL1_X86_64_ARTIFACT_PATH: linux-sdl1-x86_64.txt
     LINUX_SDL1_X86_64_ARCHIVE_ARTIFACT: linux-sdl1-x86_64-archive
-    WINDOWS_X86_64_ARTIFACT: windows-x86_64
-    WINDOWS_X86_64_ARTIFACT_PATH: windows-x86_64.txt
-    WINDOWS_X86_64_ARCHIVE_ARTIFACT: windows-x86_64-archive
-    WINDOWS_X86_32_ARTIFACT: windows-x86_32
-    WINDOWS_X86_32_ARTIFACT_PATH: windows-x86_32.txt
-    WINDOWS_X86_32_ARCHIVE_ARTIFACT: windows-x86_32-archive
-    WINDOWS_X86_64_DEBUG_ARTIFACT: windows-x86_64-debug
-    WINDOWS_X86_64_DEBUG_ARTIFACT_PATH: windows-x86_64-debug.txt
-    WINDOWS_X86_64_DEBUG_ARCHIVE_ARTIFACT: windows-x86_64-debug-archive
-    WINDOWS_X86_32_DEBUG_ARTIFACT: windows-x86_32-debug
-    WINDOWS_X86_32_DEBUG_ARTIFACT_PATH: windows-x86_32-debug.txt
-    WINDOWS_X86_32_DEBUG_ARCHIVE_ARTIFACT: windows-x86_32-debug-archive
     MACOS_X86_64_ARTIFACT: macos-x86_64
     MACOS_X86_64_ARTIFACT_PATH: macos-x86_64.txt
     MACOS_X86_64_ARCHIVE_ARTIFACT: macos-x86_64-archive
@@ -31,6 +34,41 @@ env:
     MACOS_ARM64_ARCHIVE_ARTIFACT: macos-arm64-archive
 
 jobs:
+  create_release_body:
+    name: Create release body
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash {0}
+    steps:
+      - name: Clone
+        uses: actions/checkout@v4
+
+      - name: Build
+        id: create_release_body_archive
+        run: |
+          archive_file="${{ env.RELEASE_BODY_ARTIFACT }}.md"
+          echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
+          git log -1 --pretty=format:"%s (%an)" > ${archive_file}
+
+      - name: Create Archive Path
+        run: |
+          echo archive_path= '${{ steps.create_release_body_archive.outputs.archive_file }}' > $RELEASE_BODY_ARTIFACT_PATH
+
+      - name: Upload Archive Path
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.RELEASE_BODY_ARTIFACT }}
+          path: ${{ env.RELEASE_BODY_ARTIFACT_PATH }}
+          retention-days: 1
+
+      - name: Upload Archive as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.RELEASE_BODY_ARCHIVE_ARTIFACT }}
+          path: ${{ steps.create_release_body_archive.outputs.archive_file }}
+          retention-days: 1
+
   build_windows_x86_64:
     name: Build (Windows x86_64)
     runs-on: windows-latest
@@ -378,10 +416,27 @@ jobs:
           retention-days: 1
 
   release:
-    needs: [ build_windows_x86_64, build_windows_x86_64_debug, build_windows_x86_32, build_windows_x86_32_debug, build_linux_sdl2_x86_64, build_linux_sdl1_x86_64, build_macos_x86_64, build_macos_arm64 ]
+    needs: [ create_release_body, build_windows_x86_64, build_windows_x86_64_debug, build_windows_x86_32, build_windows_x86_32_debug, build_linux_sdl2_x86_64, build_linux_sdl1_x86_64, build_macos_x86_64, build_macos_arm64 ]
     name: Release
     runs-on: ubuntu-latest
     steps:
+      # Release body
+      - name: Download Artifact (Release body)
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.RELEASE_BODY_ARTIFACT }}
+
+      - name: Extract Archive Path (Release body) and Store in Step Outputs
+        id: store_release_body
+        run: |
+          archive_path=`sed -E -n -e 's/archive_path= //p' $RELEASE_BODY_ARTIFACT_PATH`
+          echo "archive_path=$archive_path" >> $GITHUB_OUTPUT
+
+      - name: Download Artifact with Archive (Release body)
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.RELEASE_BODY_ARCHIVE_ARTIFACT }}
+
       # Windows x86_64
       - name: Download Artifact (Windows x86_64)
         uses: actions/download-artifact@v4
@@ -530,14 +585,7 @@ jobs:
         with:
           name: ${{ env.MACOS_ARM64_ARCHIVE_ARTIFACT }}
 
-      # Prepare description
-      - uses: actions/checkout@v4
-
-      - name: Prepare description
-        run: |
-          git log -1 --pretty=format:"%s (%an)" > release_body.md
-
-      # Finish
+      # Delete old nightly and create the new one
       - name: Delete previous nightly
         uses: ClementTsang/delete-tag-and-release@v0.3.1
         with:
@@ -552,7 +600,7 @@ jobs:
           name: nightly builds
           tag_name: latest
           target_commitish: ${{ github.sha }}
-          body_path: release_body.md
+          body_path: ${{ steps.store_release_body.outputs.archive_path }}
           draft: false
           prerelease: true
           files: |
