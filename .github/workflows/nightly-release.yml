@@ -531,6 +531,8 @@ jobs:
           name: ${{ env.MACOS_ARM64_ARCHIVE_ARTIFACT }}
 
       # Prepare description
+      - uses: actions/checkout@v4
+
       - name: Prepare description
         run: |
           git log -1 --pretty=format:"%s (%an)" > release_body.md
