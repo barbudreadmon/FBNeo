@@ -6,8 +6,8 @@ on:
 
 env:
     RELEASE_BODY_ARTIFACT: release-body
-    RELEASE_BODY_ARTIFACT_PATH: release-body
-    RELEASE_BODY_ARCHIVE_ARTIFACT: release-body
+    RELEASE_BODY_ARTIFACT_PATH: release-body.txt
+    RELEASE_BODY_ARCHIVE_ARTIFACT: release-body-archive
     WINDOWS_X86_64_ARTIFACT: windows-x86_64
     WINDOWS_X86_64_ARTIFACT_PATH: windows-x86_64.txt
     WINDOWS_X86_64_ARCHIVE_ARTIFACT: windows-x86_64-archive
