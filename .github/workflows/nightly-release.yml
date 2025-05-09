@@ -56,6 +56,7 @@ jobs:
           archive_file="${{ env.RELEASE_BODY_ARTIFACT }}.md"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
           echo "### Notes" > ${archive_file}
+          echo "• Only the windows builds are actively maintained, other builds might be missing important features and should be used with caution" >> ${archive_file}
           echo "" >> ${archive_file}
           echo "### Changes" >> ${archive_file}
           awk '{print "• " $0}' commits.txt >> ${archive_file}
