@@ -51,9 +51,14 @@ jobs:
       - name: Build
         id: create_release_body_archive
         run: |
+          latest_sha=$(git rev-list -n 1 latest)
+          git log --pretty=format:"%s (%an)" ${latest_sha}..${{ github.sha }} > commits.txt
           archive_file="${{ env.RELEASE_BODY_ARTIFACT }}.md"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
-          git log -1 --pretty=format:"%s (%an)" > ${archive_file}
+          echo "### Notes" > ${archive_file}
+          echo "" >> ${archive_file}
+          echo "### Changes" >> ${archive_file}
+          awk '{print "• " $0}' commits.txt >> ${archive_file}
 
       - name: Create Archive Path
         run: |
