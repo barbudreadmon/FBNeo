@@ -57,7 +57,7 @@ jobs:
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
           echo "### Notes" > ${archive_file}
           echo "• Only the windows builds are actively maintained, other builds might be missing important features and should be used with caution" >> ${archive_file}
-          echo "• The macos builds might require running `xattr -dr com.apple.quarantine "FinalBurn Neo.app"` from a terminal" >> ${archive_file}
+          echo "• The macos builds might require running \`xattr -dr com.apple.quarantine "FinalBurn Neo.app"\` from a terminal" >> ${archive_file}
           echo "• Note 2" >> ${archive_file}
           echo "" >> ${archive_file}
           echo "### Changes" >> ${archive_file}
