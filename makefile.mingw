@@ -257,7 +257,7 @@ ifdef BUILD_X64_EXE
 else
 	CFLAGS += -m32
 	CXXFLAGS += -m32
-	LDFLAGS += -m32
+	LDFLAGS += -m32 -Wl,--large-address-aware
 endif
 endif
 
