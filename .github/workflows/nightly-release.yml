@@ -423,11 +423,17 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     steps:
+      # We'll need the repo if we want to use gh command line later
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       # Release body
       - name: Download Artifact (Release body)
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.RELEASE_BODY_ARTIFACT }}
+          path: dist/
 
       - name: Extract Archive Path (Release body) and Store in Step Outputs
         id: store_release_body
@@ -439,12 +445,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.RELEASE_BODY_ARCHIVE_ARTIFACT }}
+          path: dist/
 
       # Windows x86_64
       - name: Download Artifact (Windows x86_64)
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.WINDOWS_X86_64_ARTIFACT }}
+          path: dist/
 
       - name: Extract Archive Path (Windows x86_64) and Store in Step Outputs
         id: store_windows_x86_64
@@ -456,12 +464,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.WINDOWS_X86_64_ARCHIVE_ARTIFACT }}
+          path: dist/
 
       # Windows x86_64 Debug
       - name: Download Artifact (Windows x86_64 Debug)
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.WINDOWS_X86_64_DEBUG_ARTIFACT }}
+          path: dist/
 
       - name: Extract Archive Path (Windows x86_64 Debug) and Store in Step Outputs
         id: store_windows_x86_64_debug
@@ -473,6 +483,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.WINDOWS_X86_64_DEBUG_ARCHIVE_ARTIFACT }}
+          path: dist/
 
       # Windows x86_32
       - name: Download Artifact (Windows x86_32)
@@ -480,6 +491,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.WINDOWS_X86_32_ARTIFACT }}
+          path: dist/
 
       - name: Extract Archive Path (Windows x86_32) and Store in Step Outputs
         id: store_windows_x86_32
@@ -491,6 +503,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.WINDOWS_X86_32_ARCHIVE_ARTIFACT }}
+          path: dist/
 
       # Windows x86_32 Debug
       - name: Download Artifact (Windows x86_32 Debug)
@@ -498,6 +511,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.WINDOWS_X86_32_DEBUG_ARTIFACT }}
+          path: dist/
 
       - name: Extract Archive Path (Windows x86_32 Debug) and Store in Step Outputs
         id: store_windows_x86_32_debug
@@ -509,6 +523,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.WINDOWS_X86_32_DEBUG_ARCHIVE_ARTIFACT }}
+          path: dist/
 
       # Linux SDL2 x86_64
       - name: Download Artifact (Linux SDL2 x86_64)
@@ -516,6 +531,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.LINUX_SDL2_X86_64_ARTIFACT }}
+          path: dist/
 
       - name: Extract Archive Path (Linux SDL2 x86_64) and Store in Step Outputs
         id: store_linux_sdl2_x86_64
@@ -529,6 +545,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.LINUX_SDL2_X86_64_ARCHIVE_ARTIFACT }}
+          path: dist/
 
       # Linux SDL1 x86_64
       - name: Download Artifact (Linux SDL1 x86_64)
@@ -536,6 +553,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.LINUX_SDL1_X86_64_ARTIFACT }}
+          path: dist/
 
       - name: Extract Archive Path (Linux SDL1 x86_64) and Store in Step Outputs
         id: store_linux_sdl1_x86_64
@@ -549,6 +567,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.LINUX_SDL1_X86_64_ARCHIVE_ARTIFACT }}
+          path: dist/
 
       # MacOS x86_64
 #      - name: Download Artifact (MacOS x86_64)
@@ -595,9 +614,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          tag="latest"
-          gh release delete "latest" --cleanup-tag --yes
-          gh release create "latest" --latest --target "${{ github.sha }}" --notes "${{ steps.store_release_body.outputs.archive_path }}" \
+          if gh release view "latest" > /dev/null 2>&1; then
+            gh release delete "latest" --cleanup-tag --yes
+          fi
+          gh release create "latest" --latest --target "${{ github.sha }}" --notes-file "${{ steps.store_release_body.outputs.archive_path }}" \
             ${{ steps.store_linux_sdl2_x86_64.outputs.archive_path }} \
             ${{ steps.store_linux_sdl1_x86_64.outputs.archive_path }} \
             ${{ steps.store_windows_x86_64.outputs.archive_path }} \
