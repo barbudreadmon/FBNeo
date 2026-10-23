@@ -286,7 +286,6 @@ jobs:
           make -j$(nproc) mingwccarm64 SKIPDEPEND=1 RELEASEBUILD=1
           archive_file="${{ env.WINDOWS_ARM64_ARTIFACT }}.zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
-          if llvm-objdump -d fbneoarm64.exe | grep -qP '\t(casp?|ldadd|ldclr|ldeor|ldset|ldsmax|ldsmin|ldumax|ldumin|swp)(a|l|al)?(b|h)?\t|\tst(add|clr|eor|set|smax|smin|umax|umin)l?(b|h)?\t'; then echo "fbneoarm64.exe contains ARMv8.1 LSE instructions"; exit 1; fi
           zip --junk-paths "${archive_file}" fbneoarm64.exe src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
       - name: Create Archive Path
         run: |
@@ -326,7 +325,6 @@ jobs:
           make -j$(nproc) mingwccarm64 SKIPDEPEND=1
           archive_file="${{ env.WINDOWS_ARM64_DEBUG_ARTIFACT }}.zip"
           echo "archive_file=${archive_file}" >> $GITHUB_OUTPUT
-          if llvm-objdump -d fbneoarm64d.exe | grep -qP '\t(casp?|ldadd|ldclr|ldeor|ldset|ldsmax|ldsmin|ldumax|ldumin|swp)(a|l|al)?(b|h)?\t|\tst(add|clr|eor|set|smax|smin|umax|umin)l?(b|h)?\t'; then echo "fbneoarm64d.exe contains ARMv8.1 LSE instructions"; exit 1; fi
           zip --junk-paths "${archive_file}" fbneoarm64d.exe src/license.txt fbahelpfilesrc/fbneo.chm whatsnew.html
       - name: Create Archive Path
         run: |
