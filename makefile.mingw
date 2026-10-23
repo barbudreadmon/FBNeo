@@ -276,7 +276,8 @@ endif
 
 ifdef GCC510
 ifdef BUILD_ARM64_EXE
-GCCOPTFLAGS =
+# keep ARMv8.0 compatibility (it won't work for MSYS2)
+GCCOPTFLAGS = -march=armv8-a
 else
 GCCOPTFLAGS = -ffloat-store -fforce-addr -finline-limit=1200 -fthread-jumps -fexpensive-optimizations
 endif
